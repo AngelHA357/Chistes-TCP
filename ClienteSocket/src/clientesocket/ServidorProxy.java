@@ -4,11 +4,15 @@
  */
 package clientesocket;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,7 +20,8 @@ import java.util.logging.Logger;
  *
  * @author JoseH
  */
-public class ServidorProxy implements IServidorProxy{
+public class ServidorProxy implements IServidorProxy {
+
     private String host;
     private int puerto;
 
@@ -24,33 +29,43 @@ public class ServidorProxy implements IServidorProxy{
         this.host = host;
         this.puerto = puerto;
     }
-    
+
     @Override
     public void comunicar() {
-        String mensaje = "";
-        try (Socket kkSocket = new Socket(host, puerto); 
-                PrintWriter out = new PrintWriter(kkSocket.getOutputStream(), true); 
-                BufferedReader in = new BufferedReader(new InputStreamReader(kkSocket.getInputStream()));
-                BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))){
-            
+        try (
+                Socket kkSocket = new Socket(host, puerto); DataOutputStream out = new DataOutputStream(new BufferedOutputStream(kkSocket.getOutputStream())); DataInputStream in = new DataInputStream(new BufferedInputStream(kkSocket.getInputStream())); BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))) {
+
             String fromServer;
             String fromUser;
-            while ((fromServer = in.readLine()) != null) {
-                mensaje = "Server: " + fromServer;
-                System.out.println(mensaje);
-                if (fromServer.equals("Bye."))
+
+            while (true) {
+                try {
+                    // Leer mensaje del servidor
+                    if (in.available() > 0) {
+                        fromServer = in.readUTF();
+                        System.out.println("Server: " + fromServer);
+
+                        if (fromServer.equals("Bye.")) {
+                            break;  // Salir si el servidor manda "Bye."
+                        }
+
+                        // Leer mensaje del usuario
+                        fromUser = stdIn.readLine();
+                        if (fromUser != null) {
+                            System.out.println("Client: " + fromUser);
+                            out.writeUTF(fromUser);
+                            out.flush();
+                        }
+                    }
+                } catch (SocketException se) {
+                    // Manejo del caso donde el servidor cierra la conexión
+                    System.out.println("Conexión cerrada por el servidor.");
                     break;
-                
-                fromUser = stdIn.readLine();
-                if (fromUser != null) {
-                    mensaje = "Client: " + fromUser;
-                    System.out.println(mensaje);
-                    out.println(fromUser);
                 }
-            }        
+            }
+
         } catch (IOException ex) {
-            Logger.getLogger(ClienteSocket.class.getName()).log(Level.SEVERE, null, ex);
+            
         }
     }
-    
 }
