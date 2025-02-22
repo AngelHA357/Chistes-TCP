@@ -1,5 +1,6 @@
 package ejemplosockets;
 
+import Proxy.IProxyChistes;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -9,21 +10,20 @@ import java.util.logging.Logger;
 public class KnockKnockClientManager implements Runnable {
 
     private Socket clientSocket;
-    private IClienteProxy clienteProxy;
+    private IProxyChistes skeleton;
 
     public KnockKnockClientManager(Socket c) {
         this.clientSocket = c;
-        this.clienteProxy = new ClienteProxy();
+        this.skeleton = new Skeleton();
     }
 
     @Override
     public void run() {
-        try {
-            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
-            DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-
+        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
+            DataInputStream in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()))) {
+            
             String inputLine, outputLine;
-            outputLine = clienteProxy.obtenerChiste(null);
+            outputLine = skeleton.obtenerChiste(null);
             out.writeUTF(outputLine);
             out.flush();
 
@@ -31,7 +31,7 @@ public class KnockKnockClientManager implements Runnable {
                 try {
                     if (in.available() > 0) {
                         inputLine = in.readUTF();
-                        outputLine = clienteProxy.obtenerChiste(inputLine);
+                        outputLine = skeleton.obtenerChiste(inputLine);
                         out.writeUTF(outputLine);
                         out.flush();
 

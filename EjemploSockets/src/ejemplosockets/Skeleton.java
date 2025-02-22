@@ -4,17 +4,19 @@
  */
 package ejemplosockets;
 
+import Proxy.IProxyChistes;
+
 /**
  *
- * @author JoseH
+ * @author Diego Valenzuela Parra
  */
-public class ClienteProxy implements IClienteProxy{
-    private KnockKnockProtocol kkp;
+public class Skeleton implements IProxyChistes {
+    private final KnockKnockProtocol kkp;
     
-    public ClienteProxy() {
+    public Skeleton() {
         this.kkp = new KnockKnockProtocol();
     }
-    
+   
     @Override
     public String obtenerChiste(String mensaje){
         return kkp.processInput(mensaje);
